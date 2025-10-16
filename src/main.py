@@ -8,6 +8,7 @@ from src.database.db import db
 from src.models.note import Note
 from src.routes.note_routes import note_bp
 from src.routes.ai_routes import ai_bp
+import ssl
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
@@ -18,23 +19,32 @@ app.register_blueprint(ai_bp, url_prefix='/api')
 # 使用新的Supabase Transaction pooler连接信息
 database_url = 'postgresql://postgres.lxatrvonizvxdzftswuj:XX19980519@aws-1-us-east-2.pooler.supabase.com:6543/postgres'
 
-# 标准化：在 Vercel 上使用纯 Python 的 pg8000 驱动以避免二进制轮子构建问题，本地开发默认使用 psycopg2
-if 1==1:
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql+psycopg2://', 1)
-    if '+pg8000' in database_url:
-        database_url = database_url.replace('+pg8000', '+psycopg2')
-    if database_url.startswith('postgresql://'):
-        database_url = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
 
-# 配置SSL连接（关键，因为Transaction pooler通常需要SSL）
+
+if 1 == 1:
+    if database_url.startswith('postgresql://'):
+        # 使用 pg8000 驱动
+        database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
+
+# 配置SSL连接
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
+# 为 pg8000 配置 SSL
+ssl_context = ssl.create_default_context()
+
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'connect_args': {
-        'sslmode': 'require'
+        'ssl_context': ssl_context
     }
 }
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+
+
+
 
 # 安全的启动日志（隐藏凭据）
 try:
