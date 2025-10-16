@@ -18,13 +18,21 @@ app.register_blueprint(ai_bp, url_prefix='/api')
 # 使用新的Supabase Transaction pooler连接信息
 database_url = 'postgresql://postgres.lxatrvonizvxdzftswuj:XX19980519@aws-1-us-east-2.pooler.supabase.com:6543/postgres'
 
-# 标准化为使用psycopg2驱动
-if database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql+psycopg2://', 1)
-if '+pg8000' in database_url:
-    database_url = database_url.replace('+pg8000', '+psycopg2')
-if database_url.startswith('postgresql://'):
-    database_url = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
+# 标准化：在 Vercel 上使用纯 Python 的 pg8000 驱动以避免二进制轮子构建问题，本地开发默认使用 psycopg2
+if os.environ.get('VERCEL'):
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql+pg8000://', 1)
+    if '+psycopg2' in database_url:
+        database_url = database_url.replace('+psycopg2', '+pg8000')
+    if database_url.startswith('postgresql://'):
+        database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
+else:
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+    if '+pg8000' in database_url:
+        database_url = database_url.replace('+pg8000', '+psycopg2')
+    if database_url.startswith('postgresql://'):
+        database_url = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
 
 # 配置SSL连接（关键，因为Transaction pooler通常需要SSL）
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
