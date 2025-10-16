@@ -19,3 +19,11 @@ Notes & routing:
 Troubleshooting:
 - If the app fails to start, check the build logs; missing packages must be added to `requirements.txt`.
 - Ensure write access is not required at runtime for the SQLite file in `src/database/app.db` — serverless functions have ephemeral writers; for production use migrate to a managed DB (Postgres, MySQL) and update `SQLALCHEMY_DATABASE_URI`.
+
+Supabase (Postgres) notes:
+- This project can be configured to use a Supabase Postgres database. In Supabase, go to Project -> Settings -> Database -> Connection string and copy the connection URL.
+- In Vercel set environment variable `DATABASE_URL` (or `SUPABASE_DATABASE_URL`) to the Supabase connection string. If the URL starts with `postgres://`, the app will normalize it to `postgresql://` for SQLAlchemy compatibility.
+- Example `DATABASE_URL`:
+	postgres://user:password@db.host.supabase.co:5432/postgres
+
+Important: enable SSL/require in your connection string if Supabase requires it. SQLAlchemy + psycopg2-binary usually works with the connection string as provided by Supabase.
