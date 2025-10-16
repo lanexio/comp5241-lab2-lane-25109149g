@@ -21,14 +21,23 @@ db_path = os.path.join(os.path.dirname(__file__), 'database', 'app.db')
 # SQLAlchemy prefers 'postgresql://'. Normalize if necessary.
 database_url = os.environ.get('DATABASE_URL') or os.environ.get('SUPABASE_DATABASE_URL')
 if database_url:
-    # Normalize old-style postgres:// to use the pg8000 driver which is pure-Python
+    # Normalize to use the pg8000 driver (pure-Python) to avoid psycopg2 binary issues.
+    # Handle several common prefixes and explicit driver clauses.
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql+pg8000://', 1)
-    else:
-        # If the URL already contains a driver, keep it. If it is 'postgresql://', prefer pg8000 transport
-        if database_url.startswith('postgresql://'):
-            database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
+    # Replace any explicit psycopg2 driver with pg8000
+    if '+psycopg2' in database_url:
+        database_url = database_url.replace('+psycopg2', '+pg8000')
+    # If starts with 'postgresql://' (no driver), prefer pg8000
+    if database_url.startswith('postgresql://'):
+        database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    # Safe startup log (redact credentials)
+    try:
+        redacted = database_url.split('://', 1)[0] + '://REDACTED'
+    except Exception:
+        redacted = 'unknown'
+    print(f"[startup] Using SQLALCHEMY_DATABASE_URI: {redacted}")
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
