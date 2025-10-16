@@ -17,5 +17,5 @@ openai
 asgiref==3.8.0
 
 # Pure-Python Postgres client to avoid binary wheel build issues in serverless environments
-pg8000==1.29.1
+psycopg2-binary==2.9.7
 

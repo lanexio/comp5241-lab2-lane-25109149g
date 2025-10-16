@@ -1,7 +1,6 @@
-
 import os
 import sys
-# DON\'T CHANGE THIS !!!
+# DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, send_from_directory
@@ -15,37 +14,35 @@ app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 app.register_blueprint(note_bp, url_prefix='/api')
 app.register_blueprint(ai_bp, url_prefix='/api')
 
-# uncomment if you need to use database
-db_path = os.path.join(os.path.dirname(__file__), 'database', 'app.db')
-# Allow overriding DB via DATABASE_URL (e.g. Supabase/Postgres). If DATABASE_URL uses the old 'postgres://' prefix,
-# SQLAlchemy prefers 'postgresql://'. Normalize if necessary.
-database_url = os.environ.get('DATABASE_URL') or os.environ.get('SUPABASE_DATABASE_URL')
-if database_url:
-    # Normalize to use the pg8000 driver (pure-Python) to avoid psycopg2 binary issues.
-    # Handle several common prefixes and explicit driver clauses.
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql+pg8000://', 1)
-    # Replace any explicit psycopg2 driver with pg8000
-    if '+psycopg2' in database_url:
-        database_url = database_url.replace('+psycopg2', '+pg8000')
-    # If starts with 'postgresql://' (no driver), prefer pg8000
-    if database_url.startswith('postgresql://'):
-        database_url = database_url.replace('postgresql://', 'postgresql+pg8000://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    # Safe startup log (redact credentials)
-    try:
-        redacted = database_url.split('://', 1)[0] + '://REDACTED'
-    except Exception:
-        redacted = 'unknown'
-    print(f"[startup] Using SQLALCHEMY_DATABASE_URI: {redacted}")
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
+
+# 使用新的Supabase Transaction pooler连接信息
+database_url = 'postgresql://postgres.lxatrvonizvxdzftswuj:XX19980519@aws-1-us-east-2.pooler.supabase.com:6543/postgres'
+
+# 标准化为使用psycopg2驱动
+if database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+if '+pg8000' in database_url:
+    database_url = database_url.replace('+pg8000', '+psycopg2')
+if database_url.startswith('postgresql://'):
+    database_url = database_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
+
+# 配置SSL连接（关键，因为Transaction pooler通常需要SSL）
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'connect_args': {
+        'sslmode': 'require'
+    }
+}
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# 安全的启动日志（隐藏凭据）
+try:
+    redacted = database_url.split('://', 1)[0] + '://REDACTED'
+except Exception:
+    redacted = 'unknown'
+print(f"[startup] Using SQLALCHEMY_DATABASE_URI: {redacted}")
+
 db.init_app(app)
-with app.app_context():
-    db.create_all()
-    # Ensure Note table is created
-    Note.__table__.create(db.engine, checkfirst=True)
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -66,4 +63,3 @@ def serve(path):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
