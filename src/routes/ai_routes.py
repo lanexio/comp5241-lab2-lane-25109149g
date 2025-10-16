@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+import os
 import json
 from src.ai_client import get_ai_response
 from flask import current_app
@@ -118,3 +119,27 @@ def generate_note():
     except Exception:
         # try to be forgiving: return raw ai text
         return jsonify({"error": "Failed to parse AI response as JSON", "raw": ai_response}), 500
+
+
+@ai_bp.route("/ai_warmup", methods=["GET"])
+def ai_warmup():
+    """Optional endpoint to warm up the AI connection.
+
+    Controlled by environment variable AI_WARMUP_ENABLED (set to '1' to enable).
+    When enabled this will send a tiny prompt to the AI to create the connection
+    so that the first real request later is less likely to hit cold-start/handshake issues.
+    """
+    enabled = os.environ.get('AI_WARMUP_ENABLED', '0') == '1'
+    if not enabled:
+        # Not enabled: return 204 No Content so client can call unconditionally without side-effects
+        return jsonify({"warmed": False, "reason": "disabled"}), 204
+
+    # Perform a tiny AI request. Model can be configured via AI_WARMUP_MODEL env var.
+    system_prompt = "You are a ping responder. Reply with a single short token 'pong'."
+    user_prompt = "ping"
+    model = os.environ.get('AI_WARMUP_MODEL', 'doubao-1-5-lite-32k-250115')
+    ai_response = get_ai_response(system_prompt, user_prompt, model=model)
+    if ai_response is None:
+        return jsonify({"warmed": False, "error": "ai_request_failed"}), 500
+
+    return jsonify({"warmed": True, "ai_raw": ai_response}), 200

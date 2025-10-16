@@ -16,7 +16,16 @@ app.register_blueprint(note_bp, url_prefix='/api')
 app.register_blueprint(ai_bp, url_prefix='/api')
 
 # uncomment if you need to use database
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
+db_path = os.path.join(os.path.dirname(__file__), 'database', 'app.db')
+# Allow overriding DB via DATABASE_URL (e.g. Supabase/Postgres). If DATABASE_URL uses the old 'postgres://' prefix,
+# SQLAlchemy prefers 'postgresql://'. Normalize if necessary.
+database_url = os.environ.get('DATABASE_URL') or os.environ.get('SUPABASE_DATABASE_URL')
+if database_url:
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 with app.app_context():

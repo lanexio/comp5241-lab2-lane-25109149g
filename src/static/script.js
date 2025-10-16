@@ -17,6 +17,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const API_BASE_URL = "/api";
 
+    // Optional client-side warmup to reduce first-call failures to AI provider
+    try {
+        const warmupMeta = document.querySelector('meta[name="ai-warmup-enabled"]');
+        if (warmupMeta && warmupMeta.getAttribute('content') === '1') {
+            // Fire-and-forget fetch to /api/ai_warmup with a short timeout
+            (async () => {
+                const controller = new AbortController();
+                const id = setTimeout(() => controller.abort(), 3000);
+                try {
+                    await fetch(`${API_BASE_URL}/ai_warmup`, { signal: controller.signal });
+                    // ignore response; purpose is to activate server-side connection
+                } catch (e) {
+                    // ignore errors (timeout, network). Warmup is best-effort.
+                } finally {
+                    clearTimeout(id);
+                }
+            })();
+        }
+    } catch (e) {
+        // defensive: don't let warmup break the app
+        console.error('AI warmup failed to initialize', e);
+    }
+
     // Helper to collect texts to translate and map them back
     function collectTextsForTranslation() {
         const items = [];
