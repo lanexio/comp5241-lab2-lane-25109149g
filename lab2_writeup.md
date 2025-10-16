@@ -1,4 +1,4 @@
-# Lab2 Write-up: Connecting and Deploying the App
+# Lab2 Write-up
 
 ## 1. What the lab was about
 
