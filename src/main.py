@@ -8,10 +8,12 @@ from flask import Flask, send_from_directory
 from src.database.db import db
 from src.models.note import Note
 from src.routes.note_routes import note_bp
+from src.routes.ai_routes import ai_bp
 
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 app.config['SECRET_KEY'] = 'asdf#FGSgvasgf$5$WGT'
 app.register_blueprint(note_bp, url_prefix='/api')
+app.register_blueprint(ai_bp, url_prefix='/api')
 
 # uncomment if you need to use database
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"

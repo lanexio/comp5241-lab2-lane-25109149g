@@ -12,22 +12,60 @@
             <h1>Note Taking App</h1>
             <div class="search-bar">
                 <input type="text" id="search-input" placeholder="Search notes...">
-                <button id="search-button">Search</button>
+                <button id="search-button" class="action-button">Search</button>
             </div>
         </header>
         <main>
             <div class="note-form">
+                <div style="display:flex; justify-content:flex-end;">
+                    <button id="translate-button" class="ai-button">Translate 🪄</button>
+                </div>
                 <input type="hidden" id="note-id">
                 <input type="text" id="note-title" placeholder="Note Title">
                 <textarea id="note-content" placeholder="Note Content"></textarea>
-                <button id="save-note">Save Note</button>
-                <button id="new-note" style="display: none;">New Note</button>
+                <div class="form-controls">
+                    <button id="save-note" class="action-button">Save Note</button>
+                    <button id="new-note" class="action-button" style="display: none;">New Note</button>
+                </div>
+                <!-- AI Generate Note button placed under existing save controls -->
+                <button id="ai-note-button" class="ai-button">AI Note 🪄</button>
             </div>
-            <div class="note-list" id="note-list">
-                <!-- Notes will be loaded here -->
+            <div class="notes-column">
+                <div class="note-list" id="note-list">
+                    <!-- Notes will be loaded here -->
+                </div>
+                <div id="pagination"></div>
             </div>
         </main>
     </div>
     <script src="script.js"></script>
+    <div class="ai-modal-overlay" id="ai-modal-overlay" style="display:none"></div>
+    <div class="ai-panel modal" id="ai-panel" style="display:none">
+        <h2>Generate Note with AI</h2>
+        <label for="ai-desc">Describe what you want to note (in natural language)</label>
+        <textarea id="ai-desc" class="ai-input" rows="3">3 items to bring for Badminton game tomorrow</textarea>
+        <label for="ai-lang">Output Language</label>
+        <select id="ai-lang" class="ai-input">
+            <option>English</option>
+            <option>Chinese</option>
+        </select>
+        <div class="controls">
+            <button class="cancel" id="ai-cancel">Cancel</button>
+            <button class="generate" id="ai-generate">Generate</button>
+        </div>
+
+        <div class="ai-content">
+            <h3>Generated Note Preview</h3>
+            <div class="ai-preview" id="ai-preview">
+                <strong id="ai-title"></strong>
+                <p id="ai-content"></p>
+                <div class="ai-tags" id="ai-tags"></div>
+            </div>
+        </div>
+        <div class="ai-footer">
+            <button class="cancel" id="ai-cancel-2">Cancel</button>
+            <button class="save" id="ai-save">Save Note</button>
+        </div>
+    </div>
 </body>
 </html>
