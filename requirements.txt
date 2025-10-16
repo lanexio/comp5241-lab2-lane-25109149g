@@ -16,8 +16,6 @@ openai
 # ASGI wrapper
 asgiref==3.8.0
 
-python-dotenv
-# Pure-Python Postgres client to avoid binary wheel build issues in serverless environments
-psycopg2-binary==2.9.7
+pg8000==1.29.1
 
 

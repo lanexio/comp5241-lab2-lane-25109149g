@@ -9,13 +9,22 @@ sys.path.insert(0, os.path.join(ROOT))
 # Normalize DATABASE_URL early so that SQLAlchemy picks the psycopg2 driver
 db_env = os.environ.get('DATABASE_URL') or os.environ.get('SUPABASE_DATABASE_URL')
 if db_env:
-	# common forms: postgres://, postgresql://, postgres+pg8000://, postgresql+pg8000://
-	if db_env.startswith('postgres://'):
-		db_env = db_env.replace('postgres://', 'postgresql+psycopg2://', 1)
-	if '+pg8000' in db_env:
-		db_env = db_env.replace('+pg8000', '+psycopg2')
-	if db_env.startswith('postgresql://'):
-		db_env = db_env.replace('postgresql://', 'postgresql+psycopg2://', 1)
+	# If running on Vercel, prefer the pure-Python pg8000 driver to avoid binary wheel build problems.
+	if os.environ.get('VERCEL'):
+		if db_env.startswith('postgres://'):
+			db_env = db_env.replace('postgres://', 'postgresql+pg8000://', 1)
+		if '+psycopg2' in db_env:
+			db_env = db_env.replace('+psycopg2', '+pg8000')
+		if db_env.startswith('postgresql://'):
+			db_env = db_env.replace('postgresql://', 'postgresql+pg8000://', 1)
+	else:
+		# Local/dev default: prefer psycopg2 if available
+		if db_env.startswith('postgres://'):
+			db_env = db_env.replace('postgres://', 'postgresql+psycopg2://', 1)
+		if '+pg8000' in db_env:
+			db_env = db_env.replace('+pg8000', '+psycopg2')
+		if db_env.startswith('postgresql://'):
+			db_env = db_env.replace('postgresql://', 'postgresql+psycopg2://', 1)
 	os.environ['DATABASE_URL'] = db_env
 
 from src.main import app as flask_app
